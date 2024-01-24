@@ -49,4 +49,5 @@ jobs:
             ./stop.sh
           SCRIPT_AFTER: |
             cd ${{secrets.REMOTE_TARGET}}
+            pipenv shell
             ./run.sh
