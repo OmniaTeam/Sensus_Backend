@@ -49,8 +49,5 @@ jobs:
             ./stop.sh
           SCRIPT_AFTER: |
             cd ${{secrets.REMOTE_TARGET}}
-            pipenv shell
-            pipenv install 
-            cd src
-            uvicorn main:app --host 0.0.0.0 --port 8000
+            ./run.sh
 
