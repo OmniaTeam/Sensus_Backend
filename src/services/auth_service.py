@@ -11,20 +11,11 @@ from models.users import Users
 from services.users import UserService
 from utils.unitofwork import IUnitOfWork, UnitOfWork
 
-SECRET_KEY = config_project.secret_key
+SECRET_KEY = config_project.token.secret_key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "disabled": False,
-    }
-}
-
+ACCESS_TOKEN_EXPIRE_MINUTES = int(config_project.token.access_token_expire_minute)
+REFRESH_TOKEN_EXPIRE_DAYS = int(config_project.token.refresh_token_expire_days)
+EMAIL_TOKEN_EXPIRE_MINUTES = int(config_project.token.email_token_expire_minute)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -46,7 +37,7 @@ async def authenticate_user(uow: Annotated[IUnitOfWork, Depends(UnitOfWork)], em
     return False
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -57,7 +48,20 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def get_current_user(uow: Annotated[IUnitOfWork, Depends(UnitOfWork)], access_token: Annotated[str | None, Cookie()] = None):
+def create_access_token(data: dict):
+    return create_token(data, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+
+
+def create_refresh_token(data: dict):
+    return create_token(data, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
+
+
+def create_email_token(data: dict):
+    return create_token(data, timedelta(minutes=EMAIL_TOKEN_EXPIRE_MINUTES))
+
+
+async def get_current_user(uow: Annotated[IUnitOfWork, Depends(UnitOfWork)],
+                           access_token: Annotated[str | None, Cookie()] = None):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -77,9 +81,13 @@ async def get_current_user(uow: Annotated[IUnitOfWork, Depends(UnitOfWork)], acc
     return user
 
 
+async def get_confirm_user(uow, token):
+    return await get_current_user(uow, token)
+
+
 async def get_current_active_user(
         current_user: Annotated[Users, Depends(get_current_user)]
 ):
-    if current_user.disabled:
+    if not current_user.enabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user

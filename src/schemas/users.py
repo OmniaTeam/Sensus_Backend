@@ -8,7 +8,7 @@ class UserSchema(BaseModel):
     id: int
     fio: str
     email: str
-    disabled: bool
+    enabled: bool
     role: UserRoleEnum
 
 

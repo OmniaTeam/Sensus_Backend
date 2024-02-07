@@ -15,7 +15,7 @@ class Users(Base):
     fio: Mapped[str]
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str]
-    disabled: Mapped[bool]
+    enabled: Mapped[bool]
     role = Column(Enum(UserRoleEnum))
 
     def to_read_model(self) -> UserSchema:

@@ -4,6 +4,7 @@ from utils.unitofwork import IUnitOfWork
 
 
 class UserService:
+
     @staticmethod
     async def add_user(uow: IUnitOfWork, user: Users):
 
@@ -29,3 +30,15 @@ class UserService:
         async with uow:
             user = await uow.users.find_one(email=email)
             return user
+
+    @staticmethod
+    async def update_user_by_id(uow: IUnitOfWork, id: int, data: dict):
+        async with uow:
+            user = await uow.users.edit_one(id, data)
+            return user
+
+    @staticmethod
+    async def delete_user_by_id(uow: IUnitOfWork, id: int):
+        async with uow:
+            await uow.users.delete_one(id)
+            await uow.commit()

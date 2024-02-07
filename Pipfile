@@ -7,12 +7,15 @@ name = "pypi"
 fastapi = "*"
 uvicorn = {extras = ["standart"], version = "*"}
 python-jose = {extras = ["cryptography"], version = "*"}
-passlib = {extras = ["bcrypt"], version = "*"}
 sqlalchemy = "*"
 python-multipart = "*"
 python-dotenv = "*"
 alembic = "*"
 asyncpg = "*"
+selenium = "*"
+beautifulsoup4 = "*"
+requests = "*"
+passlib = "*"
 
 [dev-packages]
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.users import Users
@@ -48,3 +48,8 @@ class SQLAlchemyRepository(AbstractRepository):
         if res:
             res = UserSchemaModel.model_validate(res)
         return res
+
+    async def delete_one(self, id: int):
+        stmt = delete(self.model).filter_by(id=id)
+        await self.session.execute(stmt)
+
