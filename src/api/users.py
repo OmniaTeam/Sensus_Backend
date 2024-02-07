@@ -13,6 +13,7 @@ from services.auth_service import authenticate_user, ACCESS_TOKEN_EXPIRE_MINUTES
     create_email_token, get_confirm_user, create_access_token, create_refresh_token, REFRESH_TOKEN_EXPIRE_DAYS
 from services.email_service import send_email
 from services.users import UserService
+from utils.logger import logger
 
 router = APIRouter(
     prefix="/users",
@@ -51,6 +52,7 @@ async def read_users_me(
 
 @router.post("/register", status_code=201)
 async def register(user_register: UserSchemaRegister, uow: UOWDep):
+    logger.info("register")
     user_by_email = await UserService.get_user_by_email(uow, user_register.email)
     if user_by_email:
         if user_by_email.enabled:
