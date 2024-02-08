@@ -5,7 +5,8 @@ from api.routers import all_routers
 
 app = FastAPI(
     title="Sensus Weather",
-    debug=True
+    debug=True,
+    docs_url="/api/docs"
 )
 main_router = APIRouter(prefix="/api")
 
