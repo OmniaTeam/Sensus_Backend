@@ -7,7 +7,7 @@ app = FastAPI(
     title="Sensus Weather",
     debug=True,
     docs_url="/api/docs",
-    openapi_url="/api"
+    openapi_url="/api/openapi.json"
 )
 main_router = APIRouter(prefix="/api")
 
