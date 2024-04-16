@@ -1,18 +1,22 @@
-from datetime import timedelta, datetime, timezone
-from typing import Annotated
+from datetime import timedelta, datetime, timezone, time
+from typing import Annotated, List
 
 from fastapi import APIRouter, HTTPException, Request, Cookie, Response
+from sqlalchemy import select, and_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import count
 from starlette import status
 from starlette.responses import RedirectResponse
 
 from api.dependencies import UOWDep, get_user
 from models.user_role import UserRoleEnum
-from models.users import Users
-from schemas.users import UserSchemaRegister, UserSchemaAuth, UserSchema
+from models.models import User, Weather, WeatherService, City
+from schemas.users import UserSchemaRegister, UserSchemaAuth, UserSchema, Services
 from services.auth_service import authenticate_user, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, create_token, \
     create_email_token, get_confirm_user, create_access_token, create_refresh_token, REFRESH_TOKEN_EXPIRE_DAYS
 from services.email_service import send_email
 from services.users import UserService
+from storage.storage import async_session_maker
 from utils.logger import logger
 
 router = APIRouter(
@@ -27,7 +31,7 @@ async def login_for_access_token(
         response: Response,
         uow: UOWDep
 ):
-    user: Users = await authenticate_user(uow, user_register.email, user_register.password)
+    user: User = await authenticate_user(uow, user_register.email, user_register.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -59,11 +63,14 @@ async def register(user_register: UserSchemaRegister, uow: UOWDep):
             raise HTTPException(status_code=409, detail="User already exists")
         else:
             await UserService.delete_user_by_id(uow, user_by_email.id)
-    user_model: Users = Users(fio=user_register.fio,
-                              email=user_register.email,
-                              password=get_password_hash(user_register.password),
-                              enabled=False,
-                              role=UserRoleEnum.user)
+    user_model: User = User(fio=user_register.fio,
+                            email=user_register.email,
+                            password=get_password_hash(user_register.password),
+                            enabled=False,
+                            role=UserRoleEnum.user,
+                            service_id=1,
+                            city_id=1,
+                            type_of_temperature="c")
 
     user_model = await UserService.add_user(uow, user_model)
     email_token = create_email_token(
@@ -74,7 +81,7 @@ async def register(user_register: UserSchemaRegister, uow: UOWDep):
 
 @router.get("/refresh", status_code=200)
 async def refresh(uow: UOWDep, response: Response, refresh_token: Annotated[str | None, Cookie()] = None):
-    user: Users = await get_confirm_user(uow, refresh_token)
+    user: User = await get_confirm_user(uow, refresh_token)
     data = {"user_id": user.id}
     response.set_cookie("access_token",
                         create_access_token(data),
@@ -90,7 +97,7 @@ async def refresh(uow: UOWDep, response: Response, refresh_token: Annotated[str 
 
 @router.get("/confirm/{token}", status_code=200)
 async def confirm(uow: UOWDep, token: str, request: Request):
-    user: Users = await get_confirm_user(uow, token)
+    user: User = await get_confirm_user(uow, token)
     async with uow:
         await uow.users.edit_one(user.id, {"enabled": True})
         await uow.commit()
@@ -106,3 +113,184 @@ async def confirm(uow: UOWDep, token: str, request: Request):
                         expires=datetime.now(timezone.utc) + timedelta(minutes=REFRESH_TOKEN_EXPIRE_DAYS),
                         path="/api/users/refresh")
     return response
+
+
+@router.get("/weather/now")
+async def weather_now(current_user: get_user):
+    async with (async_session_maker() as session):
+        session: AsyncSession
+
+        stmt = select(Weather).where(
+            and_(Weather.city_id == current_user.city_id, Weather.service_id == current_user.service_id,
+                 Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
+        res = await session.execute(stmt)
+        weather = res.scalar_one_or_none()
+
+        return weather
+
+
+@router.get("/city")
+async def get_city(current_user: get_user):
+    async with (async_session_maker() as session):
+        session: AsyncSession
+
+        stmt = select(City).where(City.city_id == current_user.city_id)
+        res = await session.execute(stmt)
+        city = res.scalar_one_or_none()
+
+        return city
+
+
+@router.get("/service")
+async def get_service(current_user: get_user):
+    async with (async_session_maker() as session):
+        session: AsyncSession
+
+        stmt = select(WeatherService).where(WeatherService.service_id == current_user.service_id)
+        res = await session.execute(stmt)
+        service = res.scalar_one_or_none()
+
+        return service
+
+
+@router.patch("/temp/{type_temp}")
+async def get_service(current_user: get_user, type_temp: str):
+    async with (async_session_maker() as session):
+        session: AsyncSession
+
+        stmt = select(User).where(User.id == current_user.id)
+        res = await session.execute(stmt)
+        user: User = res.scalar_one_or_none()
+        user.type_of_temperature = type_temp
+
+        return
+
+
+@router.get("/temp_services")
+async def get_service(current_user: get_user):
+    async with (async_session_maker() as session):
+        session: AsyncSession
+
+        stmt = select(WeatherService)
+        res = await session.execute(stmt)
+        services = res.scalars()
+        weathers = []
+        for service in services:
+            stmt = select(Weather).where(
+                and_(Weather.city_id == current_user.city_id, Weather.service_id == service.service_id,
+                     Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
+            res = await session.execute(stmt)
+            weather = res.scalar_one_or_none()
+            weather.service_name = weather.service.name
+            weathers.append(weather)
+
+        return weathers
+
+
+@router.get("/table_stat")
+async def get_service(current_user: get_user):
+    async with (async_session_maker() as session):
+        session: AsyncSession
+
+        stmt = select(WeatherService)
+        res = await session.execute(stmt)
+        services = res.scalars()
+        weathers = []
+        for service in services:
+            stmt = select(Weather).where(
+                and_(Weather.city_id == current_user.city_id, Weather.service_id == service.service_id,
+                     Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
+            res = await session.execute(stmt)
+            weather = res.scalar_one_or_none()
+            weather.service_name = weather.service.name
+            stmt = select(count(User.id)).where(User.service_id == service.service_id)
+            user_count = await session.execute(stmt)
+            user_count = int(user_count.scalar_one_or_none())
+            weather.user_count = user_count
+            weathers.append(weather)
+
+        return weathers
+
+
+@router.get("/weather/today")
+async def get_weather_today(current_user: get_user):
+    async with (async_session_maker() as session):
+        session: AsyncSession
+        current_date = datetime.now().date()
+
+        # Начальная дата - начало текущего дня (00:00:00)
+        start_date = datetime.combine(current_date, time.min)
+
+        # Конечная дата - конец текущего дня (23:59:59)
+        end_date = datetime.combine(current_date, time.max)
+        stmt = select(Weather).filter(
+            Weather.service_id == current_user.service_id,
+            Weather.city_id == current_user.city_id,
+            Weather.date >= start_date,
+            Weather.date <= end_date,
+            Weather.type == "today"
+        )
+        res = await session.execute(stmt)
+        weathers = [row for row in res.scalars()]
+
+        return weathers
+
+
+@router.get("/weather/days")
+async def get_weather_today(current_user: get_user):
+    async with (async_session_maker() as session):
+        session: AsyncSession
+        current_date = datetime.now()
+        # Начальная дата - начало текущего дня (00:00:00)
+        start_date = datetime.combine(current_date, time.min)
+        ten_days = current_date + timedelta(days=10)
+
+        end_date = datetime.combine(ten_days, time.max)
+        stmt = select(Weather).filter(
+            Weather.service_id == current_user.service_id,
+            Weather.city_id == current_user.city_id,
+            Weather.date >= start_date,
+            Weather.date <= end_date,
+            Weather.type == "days"
+        )
+        res = await session.execute(stmt)
+        weathers = [row for row in res.scalars()]
+
+        return weathers
+
+
+@router.get("/cities")
+async def get_cities():
+    async with (async_session_maker() as session):
+        stmt = select(City)
+        res = await session.execute(stmt)
+        cities = res.scalars()
+    return [city for city in cities]
+
+
+# Получение всех сервисов погоды
+@router.get("/services")
+async def get_services():
+    async with (async_session_maker() as session):
+        stmt = select(WeatherService)
+        res = await session.execute(stmt)
+        services = res.scalars()
+    return [service for service in services]
+
+
+@router.put("/update")
+async def update_user(city_id: int, service_id: int, current_user: get_user):
+    async with (async_session_maker() as session):
+        # Проверяем существование пользователя
+        stmt = select(User).filter(User.id == current_user.id)
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+        # Обновляем данные пользователя
+        user.city_id = city_id
+        user.service_id = service_id
+        await session.commit()
+
+    return

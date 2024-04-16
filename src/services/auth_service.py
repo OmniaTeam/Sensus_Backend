@@ -7,7 +7,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 
 from config import config_project
-from models.users import Users
+from models.models import User
 from services.users import UserService
 from utils.unitofwork import IUnitOfWork, UnitOfWork
 
@@ -86,7 +86,7 @@ async def get_confirm_user(uow, token):
 
 
 async def get_current_active_user(
-        current_user: Annotated[Users, Depends(get_current_user)]
+        current_user: Annotated[User, Depends(get_current_user)]
 ):
     if not current_user.enabled:
         raise HTTPException(status_code=400, detail="Inactive user")

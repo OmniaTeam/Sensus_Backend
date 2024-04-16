@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from sqlalchemy import insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.users import Users
+from models.models import User
 from schemas.users import UserSchemaModel
 
 
@@ -23,7 +23,7 @@ class SQLAlchemyRepository(AbstractRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def add_one(self, user: Users) -> Users:
+    async def add_one(self, user: User) -> User:
         self.session.add(user)
         # stmt = insert(self.model).values(**user).returning(self.model.id)
         # res = await self.session.execute(stmt)

@@ -1,4 +1,4 @@
-from models.users import Users
+from models.models import User
 from schemas.users import UserSchemaRegister
 from utils.unitofwork import IUnitOfWork
 
@@ -6,7 +6,7 @@ from utils.unitofwork import IUnitOfWork
 class UserService:
 
     @staticmethod
-    async def add_user(uow: IUnitOfWork, user: Users):
+    async def add_user(uow: IUnitOfWork, user: User):
 
         async with uow:
             user = await uow.users.add_one(user=user)

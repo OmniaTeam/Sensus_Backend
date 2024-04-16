@@ -8,7 +8,7 @@ from alembic import context
 
 from config import config_project
 # from storage.storage import Base
-from models.users import *
+from models.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
