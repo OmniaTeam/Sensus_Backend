@@ -125,8 +125,6 @@ class WeatherMonth(Base):
 
     month_id = Column(Integer, primary_key=True)
     city_id = Column(Integer, ForeignKey('City.city_id'))
-    max_temp = Column(Integer)
-    min_temp = Column(Integer)
     average_temp = Column(Integer)
     average_wind = Column(Integer)
     date = Column(Date)

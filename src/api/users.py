@@ -10,8 +10,8 @@ from starlette.responses import RedirectResponse
 
 from api.dependencies import UOWDep, get_user
 from models.user_role import UserRoleEnum
-from models.models import User, Weather, WeatherService, City
-from schemas.users import UserSchemaRegister, UserSchemaAuth, UserSchema, Services
+from models.models import User, Weather, WeatherService, City, WeatherMonth
+from schemas.users import UserSchemaRegister, UserSchemaAuth, UserSchema, Services, Period
 from services.auth_service import authenticate_user, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, create_token, \
     create_email_token, get_confirm_user, create_access_token, create_refresh_token, REFRESH_TOKEN_EXPIRE_DAYS
 from services.email_service import send_email
@@ -75,7 +75,7 @@ async def register(user_register: UserSchemaRegister, uow: UOWDep):
     user_model = await UserService.add_user(uow, user_model)
     email_token = create_email_token(
         data={"user_id": user_model.id})
-    send_email(user_register.email, "http://localhost:8080/api/users/confirm/" + email_token)
+    send_email(user_register.email, "https://sensus.theomnia.ru/api/users/confirm/" + email_token)
     return UserSchema.model_validate(user_model)
 
 
@@ -223,7 +223,7 @@ async def get_weather_today(current_user: get_user):
 
         # Конечная дата - конец текущего дня (23:59:59)
         end_date = datetime.combine(current_date, time.max)
-        stmt = select(Weather).filter(
+        stmt = select(Weather).limit(8).filter(
             Weather.service_id == current_user.service_id,
             Weather.city_id == current_user.city_id,
             Weather.date >= start_date,
@@ -246,7 +246,7 @@ async def get_weather_today(current_user: get_user):
         ten_days = current_date + timedelta(days=10)
 
         end_date = datetime.combine(ten_days, time.max)
-        stmt = select(Weather).filter(
+        stmt = select(Weather).limit(10).filter(
             Weather.service_id == current_user.service_id,
             Weather.city_id == current_user.city_id,
             Weather.date >= start_date,
@@ -264,8 +264,8 @@ async def get_cities():
     async with (async_session_maker() as session):
         stmt = select(City)
         res = await session.execute(stmt)
-        cities = res.scalars()
-    return [city for city in cities]
+        cities = res.scalars().all()
+    return cities
 
 
 # Получение всех сервисов погоды
@@ -274,8 +274,8 @@ async def get_services():
     async with (async_session_maker() as session):
         stmt = select(WeatherService)
         res = await session.execute(stmt)
-        services = res.scalars()
-    return [service for service in services]
+        services = res.scalars().all()
+    return services
 
 
 @router.put("/update")
@@ -294,3 +294,18 @@ async def update_user(city_id: int, service_id: int, current_user: get_user):
         await session.commit()
 
     return
+
+
+@router.post("/weather_data")
+async def get_weather_data_for_period(period: Period):
+    async with async_session_maker() as session:
+        stmt = select(WeatherMonth).where(
+            WeatherMonth.date.between(period.start_date, period.end_date)
+        )
+        res = await session.execute(stmt)
+        weather_data = res.scalars().all()
+
+        if not weather_data:
+            raise HTTPException(status_code=404, detail="No data found for the specified period")
+
+    return weather_data

@@ -295,9 +295,9 @@ async def save_weather(weather):
 
 async def main():
     pass
-    # await asyncio.gather(asyncio.create_task(gismetio_lipetsk_now()),
-    #                      asyncio.create_task(gismetio_lipetsk_today())
-    #                      )
+    await asyncio.gather(asyncio.create_task(gismetio_lipetsk_now()),
+                         asyncio.create_task(gismetio_lipetsk_today())
+                         )
     await asyncio.gather(asyncio.create_task(gismetio_lipetsk_days()))
 
 

@@ -16,6 +16,7 @@ selenium = "*"
 beautifulsoup4 = "*"
 requests = "*"
 passlib = "*"
+apscheduler = "*"
 
 [dev-packages]
 
