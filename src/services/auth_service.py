@@ -72,7 +72,7 @@ async def get_current_user(uow: Annotated[IUnitOfWork, Depends(UnitOfWork)],
         user_id: int = payload.get("user_id")
         if user_id is None:
             raise credentials_exception
-    except JWTError as er:
+    except Exception as er:
         print(er)
         raise credentials_exception
     user = await UserService.get_user_by_id(uow, user_id)

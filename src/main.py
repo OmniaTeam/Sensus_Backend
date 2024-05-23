@@ -40,8 +40,8 @@ async def startup_event():
 
     # Добавляем задачи в шедулер
     scheduler.add_job(job1, IntervalTrigger(minutes=15))
-    scheduler.add_job(job2, IntervalTrigger(days=1))
-    scheduler.add_job(job3, IntervalTrigger(days=1))
+    scheduler.add_job(job2, IntervalTrigger(hours=23))
+    scheduler.add_job(job3, IntervalTrigger(hours=24))
 
     # Запускаем шедулер
     scheduler.start()
