@@ -1,6 +1,7 @@
 import asyncio
 
 import uvicorn
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, APIRouter
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -38,10 +39,11 @@ async def startup_event():
     # Создаем асинхронный шедулер
     scheduler = AsyncIOScheduler()
 
+
     # Добавляем задачи в шедулер
     scheduler.add_job(job1, IntervalTrigger(minutes=15))
-    scheduler.add_job(job2, IntervalTrigger(hours=23))
-    scheduler.add_job(job3, IntervalTrigger(hours=24))
+    scheduler.add_job(job2, CronTrigger(hour=0, minute=0, second=0))
+    scheduler.add_job(job3, CronTrigger(hour=0, minute=0, second=10))
 
     # Запускаем шедулер
     scheduler.start()
