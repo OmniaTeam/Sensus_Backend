@@ -24,6 +24,11 @@ router = APIRouter(
     tags=["Users"],
 )
 
+@router.get("/logout")
+def delete_cookie(response: Response):
+    response.delete_cookie("access_token")
+    return {"message": "Cookie deleted!"}
+
 
 @router.post("/token")
 async def login_for_access_token(
@@ -43,6 +48,12 @@ async def login_for_access_token(
         data={"user_id": user.id}, expires_delta=access_token_expires
     )
     response.set_cookie(key="access_token", value=access_token, httponly=True)
+    data = {"user_id": user.id}
+    response.set_cookie("refresh_token",
+                        create_refresh_token(data),
+                        httponly=True,
+                        expires=datetime.now(timezone.utc) + timedelta(minutes=REFRESH_TOKEN_EXPIRE_DAYS),
+                        path="/api/users/refresh")
 
     return
 
@@ -181,8 +192,9 @@ async def get_service(current_user: get_user):
                      Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
             res = await session.execute(stmt)
             weather = res.scalar_one_or_none()
-            weather.service_name = weather.service.name
-            weathers.append(weather)
+            if weather is not None:
+                weather.service_name = weather.service.name
+                weathers.append(weather)
 
         return weathers
 
