@@ -34,7 +34,7 @@ async def job3():
 
 
 
-@app.on_event("startup")
+# @app.on_event("startup")
 async def startup_event():
     # Создаем асинхронный шедулер
     scheduler = AsyncIOScheduler()

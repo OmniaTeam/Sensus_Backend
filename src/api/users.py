@@ -214,12 +214,13 @@ async def get_service(current_user: get_user):
                      Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
             res = await session.execute(stmt)
             weather = res.scalar_one_or_none()
-            weather.service_name = weather.service.name
-            stmt = select(count(User.id)).where(User.service_id == service.service_id)
-            user_count = await session.execute(stmt)
-            user_count = int(user_count.scalar_one_or_none())
-            weather.user_count = user_count
-            weathers.append(weather)
+            if weather is not None:
+                weather.service_name = weather.service.name
+                stmt = select(count(User.id)).where(User.service_id == service.service_id)
+                user_count = await session.execute(stmt)
+                user_count = int(user_count.scalar_one_or_none())
+                weather.user_count = user_count
+                weathers.append(weather)
 
         return weathers
 
