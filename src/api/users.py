@@ -173,7 +173,7 @@ async def get_service(current_user: get_user, type_temp: str):
         res = await session.execute(stmt)
         user: User = res.scalar_one_or_none()
         user.type_of_temperature = type_temp
-
+        await session.commit()
         return
 
 
