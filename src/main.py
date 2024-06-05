@@ -6,7 +6,7 @@ from fastapi import FastAPI, APIRouter
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from api.routers import all_routers
-from parser.gismetio import gismetio_lipetsk_now, gismetio_lipetsk_today, gismetio_lipetsk_days
+from parser.gismetio import *
 
 app = FastAPI(
     title="Sensus Weather",
@@ -23,14 +23,38 @@ app.include_router(main_router)
 
 async def job1():
     await gismetio_lipetsk_now()
+    await asyncio.sleep(1)
+    await gismetio_dankov_now()
+    await asyncio.sleep(1)
+    await gismetio_yelets_now()
+    await asyncio.sleep(1)
+    await gismetio_gryzi_now()
+    await asyncio.sleep(1)
+    await gismetio_gryzi_now()
     # Здесь можно добавить ваш код
 
 async def job2():
     await gismetio_lipetsk_today()
+    await asyncio.sleep(2)
+    await gismetio_dankov_today()
+    await asyncio.sleep(2)
+    await gismetio_yelets_today()
+    await asyncio.sleep(2)
+    await gismetio_gryzi_today()
+    await asyncio.sleep(2)
+    await gismetio_chaplygin_today()
     # Здесь можно добавить ваш код
 
 async def job3():
     await gismetio_lipetsk_days()
+    await asyncio.sleep(1)
+    await gismetio_dankov_days()
+    await asyncio.sleep(1)
+    await gismetio_yelets_days()
+    await asyncio.sleep(1)
+    await gismetio_gryzi_days()
+    await asyncio.sleep(1)
+    await gismetio_chaplygin_days()
 
 
 

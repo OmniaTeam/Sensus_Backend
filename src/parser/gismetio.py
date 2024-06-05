@@ -13,7 +13,9 @@ from storage.storage import get_async_session, async_session_maker
 moscow_timezone = datetime.timezone(datetime.timedelta(hours=3))
 lipetsk = "weather-lipetsk-4437"
 yelets = "weather-yelets-4436"
-
+dankov = "weather-dankov-11592"
+gryzi = "weather-gryazi-4439"
+chaplygin = "weather-chaplygin-11296"
 
 def send_request(url, headers, params):
     return requests.get(url, headers=headers, params=params).text
@@ -122,7 +124,12 @@ def get_gismetio_data_today(city, service_id, city_id):
     # print(temps_values)
 
     winds = soup.find("div", attrs={"data-row": "wind-speed"}).find_all("div", class_="row-item")
-    winds_values = [int(wind.find("span", class_="wind-unit unit unit_wind_m_s").get_text()) for wind in winds]
+    tmp = winds[0].find("span", class_="wind-unit unit unit_wind_m_s").get_text()
+    for wind in winds:
+        span = wind.find_all("span")[0]
+        tmp = span.get_text()
+
+    winds_values = [int(wind.find_all("span")[0].get_text()) for wind in winds]
     # print(winds_values)
 
     winds = soup.find("div", attrs={"data-row": "wind-direction"}).find_all("div", class_="row-item")
@@ -197,7 +204,7 @@ def get_gismetio_data_10_days(city, service_id, city_id):
     # print(temps_values)
 
     winds = soup.find("div", attrs={"data-row": "wind-speed"}).find_all("div", class_="row-item")
-    winds_values = [int(wind.find("span", class_="wind-unit unit unit_wind_m_s").get_text()) for wind in winds]
+    winds_values = [int(wind.find_all("span")[0].get_text()) for wind in winds]
     # print(winds_values)
 
     winds = soup.find("div", attrs={"data-row": "wind-direction"}).find_all("div", class_="row-item")
@@ -205,9 +212,8 @@ def get_gismetio_data_10_days(city, service_id, city_id):
     # print(winds_direction)
 
     pressures = soup.find("div", attrs={"data-row": "pressure"}).find_all("div", class_="value")
-    pressures_values = [(int(pressure.find("div", class_="maxt").find("span",
-                                                                      class_="unit unit_pressure_mm_hg").get_text()) + int(
-        pressure.find("div", class_="mint").find("span", class_="unit unit_pressure_mm_hg").get_text())) // 2 for
+    tmp = pressures[0].find("div", class_="maxt").find_all("span")[0]
+    pressures_values = [(int(pressure.find("div", class_="maxt").find_all("span")[0].get_text())) for
                         pressure in
                         pressures]
     # print(pressures_values)
@@ -278,6 +284,74 @@ async def gismetio_lipetsk_days():
         await save_weather(weather)
 
 
+async def gismetio_yelets_now():
+    weather = get_gismetio_data_now(yelets, 1, 2)
+    await save_weather(weather)
+
+
+async def gismetio_yelets_today():
+    weathers = get_gismetio_data_today(yelets, 1, 2)
+    for weather in weathers:
+        await save_weather(weather)
+
+
+async def gismetio_yelets_days():
+    weathers = get_gismetio_data_10_days(yelets, 1, 2)
+    for weather in weathers:
+        await save_weather(weather)
+
+
+async def gismetio_dankov_days():
+    weathers = get_gismetio_data_10_days(dankov, 1, 3)
+    for weather in weathers:
+        await save_weather(weather)
+
+
+async def gismetio_dankov_now():
+    weather = get_gismetio_data_now(dankov, 1, 3)
+    await save_weather(weather)
+
+
+async def gismetio_dankov_today():
+    weathers = get_gismetio_data_today(dankov, 1, 3)
+    for weather in weathers:
+        await save_weather(weather)
+        
+        
+async def gismetio_gryzi_days():
+    weathers = get_gismetio_data_10_days(gryzi, 1, 4)
+    for weather in weathers:
+        await save_weather(weather)
+
+
+async def gismetio_gryzi_now():
+    weather = get_gismetio_data_now(gryzi, 1, 4)
+    await save_weather(weather)
+
+
+async def gismetio_gryzi_today():
+    weathers = get_gismetio_data_today(gryzi, 1, 4)
+    for weather in weathers:
+        await save_weather(weather)
+        
+
+async def gismetio_chaplygin_days():
+    weathers = get_gismetio_data_10_days(chaplygin, 1, 5)
+    for weather in weathers:
+        await save_weather(weather)
+
+
+async def gismetio_chaplygin_now():
+    weather = get_gismetio_data_now(chaplygin, 1, 5)
+    await save_weather(weather)
+
+
+async def gismetio_chaplygin_today():
+    weathers = get_gismetio_data_today(chaplygin, 1, 5)
+    for weather in weathers:
+        await save_weather(weather)
+
+
 async def save_weather(weather):
     async with async_session_maker() as session:
         session: AsyncSession
@@ -295,10 +369,15 @@ async def save_weather(weather):
 
 async def main():
     pass
-    await asyncio.gather(asyncio.create_task(gismetio_lipetsk_now()),
-                         asyncio.create_task(gismetio_lipetsk_today())
+    await asyncio.gather(
+        # asyncio.create_task(gismetio_lipetsk_now()),
+                         asyncio.create_task(gismetio_lipetsk_days()),
+        asyncio.create_task(gismetio_gryzi_days()),
+        asyncio.create_task(gismetio_dankov_days()),
+        asyncio.create_task(gismetio_chaplygin_days()),
+        asyncio.create_task(gismetio_yelets_days())
                          )
-    await asyncio.gather(asyncio.create_task(gismetio_lipetsk_days()))
+    # await asyncio.gather(asyncio.create_task(gismetio_lipetsk_days()))
 
 
 if __name__ == "__main__":
