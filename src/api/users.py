@@ -1,3 +1,4 @@
+import copy
 import random
 from datetime import timedelta, datetime, timezone, time
 from typing import Annotated, List
@@ -227,9 +228,7 @@ async def get_service(current_user: get_user):
                      Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
             res = await session.execute(stmt)
             weather = res.scalar_one_or_none()
-            stmt = select(count(User.id)).where(User.service_id == service.service_id)
-            user_count = await session.execute(stmt)
-            user_count = int(user_count.scalar_one_or_none())
+
             if weather is None:
                 stmt = select(Weather).where(
                     and_(Weather.city_id == current_user.city_id, Weather.service_id == 1,
@@ -237,19 +236,25 @@ async def get_service(current_user: get_user):
                 res = await session.execute(stmt)
                 weather = res.scalar_one_or_none()
 
-                weather.temperature = randomize_integer(weather.temperature)
+                weather = copy.deepcopy(weather)
+                weather.service_id = service.service_id
                 weather.humidity = randomize_integer(weather.humidity)
+                weather.temperature = randomize_integer(weather.temperature)
                 weather.pressure = randomize_integer(weather.pressure)
-                weather.wind_speed = randomize_integer(weather.wind_value)
-                weather.wind_direction = randomize_string()
+                weather.wind_value = randomize_integer(weather.wind_value)
+                weather.wind_direction = random_string_from_list()
 
 
-                user_count = random.randint(5, 10)
 
-            weather.service_name = weather.service.name
+            if weather is not None:
 
-            weather.user_count = user_count
-            weathers.append(weather)
+
+                weather.service_name = service.name
+                stmt = select(count(User.id)).where(User.service_id == service.service_id)
+                user_count = await session.execute(stmt)
+                user_count = int(user_count.scalar_one_or_none())
+                weather.user_count = user_count
+                weathers.append(weather)
 
         return weathers
 
@@ -378,8 +383,6 @@ def randomize_integer(number):
     new_number = number + random_offset
     return new_number
 
-def randomize_string():
-    string_list = ["С", "С/З", "Ю", "В", "З"]
-    random_index = random.randint(0, len(string_list) - 1)  # Генерируем случайный индекс
-    random_string = string_list[random_index]
-    return random_string
+def random_string_from_list():
+    string_list = ["С", "Ю", "З", "В", "C/З"]
+    return random.choice(string_list)
