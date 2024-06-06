@@ -379,7 +379,7 @@ async def get_weather_data_for_period(period: Period):
     return weather_data
 
 def randomize_integer(number):
-    random_offset = random.randint(-2, 2)  # Генерируем случайное смещение от -2 до 2
+    random_offset = random.randint(0, 2)  # Генерируем случайное смещение от -2 до 2
     new_number = number + random_offset
     return new_number
 
