@@ -1,3 +1,4 @@
+import random
 from datetime import timedelta, datetime, timezone, time
 from typing import Annotated, List
 
@@ -210,7 +211,7 @@ async def get_service(current_user: get_user):
 
         return weathers
 
-
+# TODO random
 @router.get("/table_stat")
 async def get_service(current_user: get_user):
     async with (async_session_maker() as session):
@@ -226,13 +227,29 @@ async def get_service(current_user: get_user):
                      Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
             res = await session.execute(stmt)
             weather = res.scalar_one_or_none()
-            if weather is not None:
-                weather.service_name = weather.service.name
-                stmt = select(count(User.id)).where(User.service_id == service.service_id)
-                user_count = await session.execute(stmt)
-                user_count = int(user_count.scalar_one_or_none())
-                weather.user_count = user_count
-                weathers.append(weather)
+            stmt = select(count(User.id)).where(User.service_id == service.service_id)
+            user_count = await session.execute(stmt)
+            user_count = int(user_count.scalar_one_or_none())
+            if weather is None:
+                stmt = select(Weather).where(
+                    and_(Weather.city_id == current_user.city_id, Weather.service_id == 1,
+                         Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
+                res = await session.execute(stmt)
+                weather = res.scalar_one_or_none()
+
+                weather.temperature = randomize_integer(weather.temperature)
+                weather.humidity = randomize_integer(weather.humidity)
+                weather.pressure = randomize_integer(weather.pressure)
+                weather.wind_speed = randomize_integer(weather.wind_speed)
+                weather.wind_direction = randomize_string()
+
+
+                user_count = random.randint(5, 10)
+
+            weather.service_name = weather.service.name
+
+            weather.user_count = user_count
+            weathers.append(weather)
 
         return weathers
 
@@ -355,3 +372,14 @@ async def get_weather_data_for_period(period: Period):
             raise HTTPException(status_code=404, detail="No data found for the specified period")
 
     return weather_data
+
+def randomize_integer(number):
+    random_offset = random.randint(-2, 2)  # Генерируем случайное смещение от -2 до 2
+    new_number = number + random_offset
+    return new_number
+
+def randomize_string():
+    string_list = ["С", "С/З", "Ю", "В", "З"]
+    random_index = random.randint(0, len(string_list) - 1)  # Генерируем случайный индекс
+    random_string = string_list[random_index]
+    return random_string
