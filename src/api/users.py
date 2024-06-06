@@ -137,6 +137,13 @@ async def weather_now(current_user: get_user):
         res = await session.execute(stmt)
         weather = res.scalar_one_or_none()
 
+        if weather is None:
+            stmt = select(Weather).where(
+                and_(Weather.city_id == current_user.city_id, Weather.service_id == 1,
+                     Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
+            res = await session.execute(stmt)
+            weather = res.scalar_one_or_none()
+
         return weather
 
 
@@ -192,9 +199,14 @@ async def get_service(current_user: get_user):
                      Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
             res = await session.execute(stmt)
             weather = res.scalar_one_or_none()
-            if weather is not None:
-                weather.service_name = weather.service.name
-                weathers.append(weather)
+            if weather is None:
+                stmt = select(Weather).where(
+                    and_(Weather.city_id == current_user.city_id, Weather.service_id == 1,
+                         Weather.type == "now")).order_by(Weather.weather_id.desc()).limit(1)
+                res = await session.execute(stmt)
+                weather = res.scalar_one_or_none()
+            weather.service_name = weather.service.name
+            weathers.append(weather)
 
         return weathers
 
@@ -246,6 +258,17 @@ async def get_weather_today(current_user: get_user):
         res = await session.execute(stmt)
         weathers = [row for row in res.scalars()]
 
+        if weathers == []:
+            stmt = select(Weather).limit(8).filter(
+                Weather.service_id == 1,
+                Weather.city_id == current_user.city_id,
+                Weather.date >= start_date,
+                Weather.date <= end_date,
+                Weather.type == "today"
+            )
+            res = await session.execute(stmt)
+            weathers = [row for row in res.scalars()]
+
         return weathers
 
 
@@ -269,6 +292,16 @@ async def get_weather_today(current_user: get_user):
         res = await session.execute(stmt)
         weathers = [row for row in res.scalars()]
 
+        if weathers == []:
+            stmt = select(Weather).limit(10).filter(
+                Weather.service_id == current_user.service_id,
+                Weather.city_id == current_user.city_id,
+                Weather.date >= start_date,
+                Weather.date <= end_date,
+                Weather.type == "days"
+            )
+            res = await session.execute(stmt)
+            weathers = [row for row in res.scalars()]
         return weathers
 
 

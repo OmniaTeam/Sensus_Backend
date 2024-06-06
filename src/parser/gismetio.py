@@ -255,6 +255,7 @@ def convert_value_temp_to_int(temp: str):
 
 def convert_wind_direction(direction: str) -> str:
     data = {
+        "штиль": "С",
         "северный": "С",
         "северо-западный": "С/З",
         "северо-восточный": "С/В",
@@ -367,17 +368,35 @@ async def save_weather(weather):
 #         for row in result:
 #             print(row)
 
-async def main():
-    pass
+async def gismetio_now():
     await asyncio.gather(
-        # asyncio.create_task(gismetio_lipetsk_now()),
-                         asyncio.create_task(gismetio_lipetsk_days()),
-        asyncio.create_task(gismetio_gryzi_days()),
-        asyncio.create_task(gismetio_dankov_days()),
-        asyncio.create_task(gismetio_chaplygin_days()),
-        asyncio.create_task(gismetio_yelets_days())
-                         )
-    # await asyncio.gather(asyncio.create_task(gismetio_lipetsk_days()))
+    asyncio.create_task(gismetio_lipetsk_now()),
+    asyncio.create_task(gismetio_gryzi_now()),
+    asyncio.create_task(gismetio_dankov_now()),
+    asyncio.create_task(gismetio_chaplygin_now()),
+    asyncio.create_task(gismetio_yelets_now())
+    )
+async def gismetio_today():
+    await asyncio.gather(
+    asyncio.create_task(gismetio_lipetsk_today()),
+    asyncio.create_task(gismetio_gryzi_today()),
+    asyncio.create_task(gismetio_dankov_today()),
+    asyncio.create_task(gismetio_chaplygin_today()),
+    asyncio.create_task(gismetio_yelets_today())
+    )
+async def gismetio_days():
+    await asyncio.gather(
+    asyncio.create_task(gismetio_lipetsk_days()),
+    asyncio.create_task(gismetio_gryzi_days()),
+    asyncio.create_task(gismetio_dankov_days()),
+    asyncio.create_task(gismetio_chaplygin_days()),
+    asyncio.create_task(gismetio_yelets_days())
+    )
+
+async def main():
+    # await gismetio_now()
+    # await gismetio_today()
+    await gismetio_days()
 
 
 if __name__ == "__main__":
