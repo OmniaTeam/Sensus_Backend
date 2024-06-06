@@ -240,7 +240,7 @@ async def get_service(current_user: get_user):
                 weather.temperature = randomize_integer(weather.temperature)
                 weather.humidity = randomize_integer(weather.humidity)
                 weather.pressure = randomize_integer(weather.pressure)
-                weather.wind_speed = randomize_integer(weather.wind_speed)
+                weather.wind_speed = randomize_integer(weather.wind_value)
                 weather.wind_direction = randomize_string()
 
 
