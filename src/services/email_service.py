@@ -20,7 +20,7 @@ def send_email(email_to, token):
     message['Subject'] = "Подтверждение почты - Sensus Weather"
 
     body = generate_email_confirmation_html(token)
-    message.attach(MIMEText(body, 'plain'))
+    message.attach(MIMEText(body, 'html'))
 
     try:
         server = smtplib.SMTP(smtp_server, port)
