@@ -8,7 +8,7 @@ from config import config_project
 
 
 def send_email(email_to, token):
-    smtp_server = 'smtp.gmail.com'
+    smtp_server = 'smtp.yandex.ru'
     port = 587
 
     sender_email = config_project.email_sender
