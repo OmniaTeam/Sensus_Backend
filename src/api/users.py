@@ -316,7 +316,7 @@ async def get_weather_today(current_user: get_user):
 
         if weathers == []:
             stmt = select(Weather).limit(10).filter(
-                Weather.service_id == current_user.service_id,
+                Weather.service_id == 1,
                 Weather.city_id == current_user.city_id,
                 Weather.date >= start_date,
                 Weather.date <= end_date,
